@@ -11,7 +11,6 @@
 
 using namespace std;
 
-// Discount Strategy (Strategy Pattern)
 class DiscountStrategy {
 public:
     virtual ~DiscountStrategy() = default;
@@ -23,7 +22,7 @@ private:
     double amount;
 public:
     FlatDiscountStrategy(double amt) : amount(amt) {
-        if (amt < 0) throw std::invalid_argument("Discount amount cannot be negative");
+        if (amt < 0) throw invalid_argument("Discount amount cannot be negative");
     }
     double calculate(double baseAmount) override {
         return min(amount, baseAmount);
@@ -35,7 +34,7 @@ private:
     double percent;
 public:
     PercentageDiscountStrategy(double pct) : percent(pct) {
-        if (pct < 0 || pct > 100) throw std::invalid_argument("Percentage must be between 0 and 100");
+        if (pct < 0 || pct > 100) throw invalid_argument("Percentage must be between 0 and 100");
     }
     double calculate(double baseAmount) override {
         return (percent / 100.0) * baseAmount;
@@ -48,8 +47,8 @@ private:
     double cap;
 public:
     PercentageWithCapStrategy(double pct, double capVal) : percent(pct), cap(capVal) {
-        if (pct < 0 || pct > 100) throw std::invalid_argument("Percentage must be between 0 and 100");
-        if (capVal < 0) throw std::invalid_argument("Cap cannot be negative");
+        if (pct < 0 || pct > 100) throw invalid_argument("Percentage must be between 0 and 100");
+        if (capVal < 0) throw invalid_argument("Cap cannot be negative");
     }
     double calculate(double baseAmount) override {
         double disc = (percent / 100.0) * baseAmount;
@@ -63,7 +62,6 @@ enum class StrategyType {
     PERCENT_WITH_CAP
 };
 
-// DiscountStrategyManager (Singleton)
 class DiscountStrategyManager {
 private:
     static DiscountStrategyManager* instance;
@@ -84,13 +82,12 @@ public:
             case StrategyType::PERCENT_WITH_CAP:
                 return make_unique<PercentageWithCapStrategy>(param1, param2);
             default:
-                throw std::invalid_argument("Invalid strategy type");
+                throw invalid_argument("Invalid strategy type");
         }
     }
 };
 DiscountStrategyManager* DiscountStrategyManager::instance = nullptr;
 
-// Product and CartItem Classes
 class Product {
 private:
     string name;
@@ -98,13 +95,13 @@ private:
     double price;
 public:
     Product(string name, string category, double price) : name(name), category(category), price(price) {
-        if (price < 0) throw std::invalid_argument("Price cannot be negative");
+        if (price < 0) throw invalid_argument("Price cannot be negative");
     }
     string getName() const { return name; }
     string getCategory() const { return category; }
     double getPrice() const { return price; }
     void setPrice(double newPrice) {
-        if (newPrice < 0) throw std::invalid_argument("Price cannot be negative");
+        if (newPrice < 0) throw invalid_argument("Price cannot be negative");
         price = newPrice;
     }
 };
@@ -115,18 +112,17 @@ private:
     int quantity;
 public:
     CartItem(const Product* prod, int qty) : product(prod), quantity(qty) {
-        if (qty <= 0) throw std::invalid_argument("Quantity must be positive");
+        if (qty <= 0) throw invalid_argument("Quantity must be positive");
     }
     double itemTotal() const { return product->getPrice() * quantity; }
     const Product* getProduct() const { return product; }
     int getQuantity() const { return quantity; }
     void setQuantity(int qty) {
-        if (qty < 0) throw std::invalid_argument("Quantity cannot be negative");
+        if (qty < 0) throw invalid_argument("Quantity cannot be negative");
         quantity = qty;
     }
 };
 
-// Cart Class
 class Cart {
 private:
     unordered_map<const Product*, unique_ptr<CartItem>> items;
@@ -150,7 +146,7 @@ public:
 
     void editItem(const Product* prod, int newQty) {
         if (items.find(prod) == items.end()) {
-            throw std::invalid_argument("Product not in cart");
+            throw invalid_argument("Product not in cart");
         }
         double oldTotal = items[prod]->itemTotal();
         if (newQty == 0) {
@@ -174,7 +170,7 @@ public:
     double getOriginalTotal() const { return originalTotal; }
     double getCurrentTotal() const { return currentTotal; }
     void applyDiscount(double d) {
-        if (d < 0) throw std::invalid_argument("Discount cannot be negative");
+        if (d < 0) throw invalid_argument("Discount cannot be negative");
         currentTotal -= d;
         if (currentTotal < 0) currentTotal = 0;
     }
@@ -185,7 +181,6 @@ public:
     const unordered_map<const Product*, unique_ptr<CartItem>>& getItems() const { return items; }
 };
 
-// Coupon Base Class (Chain of Responsibility)
 class Coupon {
 private:
     Coupon* next;
@@ -229,7 +224,6 @@ public:
     virtual string name() const = 0;
 };
 
-// Concrete Coupons
 class SeasonalOffer : public Coupon {
 private:
     double percent;
@@ -322,7 +316,6 @@ public:
     }
 };
 
-// CouponManager (Singleton with Priority Queue for Discount Optimization)
 class CouponManager {
 private:
     static CouponManager* instance;
@@ -372,10 +365,10 @@ public:
             Coupon* coupon;
             double discount;
             bool operator<(const CouponEntry& other) const {
-                return discount < other.discount; // Max heap
+                return discount < other.discount;
             }
         };
-        cart->recalculateTotals(); // Reset totals before applying discounts
+        cart->recalculateTotals();
         priority_queue<CouponEntry> pq;
         for (const auto& [name, coupon] : coupons) {
             if (coupon->isApplicable(cart)) {
@@ -404,27 +397,22 @@ public:
 };
 CouponManager* CouponManager::instance = nullptr;
 
-// Main: Client Code with Updated Menu
 int main() {
     try {
-        // Initialize CouponManager and register coupons
         CouponManager* mgr = CouponManager::getInstance();
         mgr->registerCoupon(make_unique<SeasonalOffer>(10, "Clothing"));
         mgr->registerCoupon(make_unique<LoyaltyDiscount>(5));
         mgr->registerCoupon(make_unique<BulkPurchaseDiscount>(10000, 500));
         mgr->registerCoupon(make_unique<BankingCoupon>("UPI", 2000, 15, 500));
 
-        // Create products
         vector<unique_ptr<Product>> products;
         products.push_back(make_unique<Product>("Winter Jacket", "Clothing", 1000));
         products.push_back(make_unique<Product>("Smartphone", "Electronics", 20000));
         products.push_back(make_unique<Product>("Jeans", "Clothing", 1000));
         products.push_back(make_unique<Product>("Headphones", "Electronics", 2000));
 
-        // Create cart
         auto cart = make_unique<Cart>();
 
-        // Interactive menu
         while (true) {
             cout << "\n=== Shopping Cart Menu ===\n";
             cout << "1. Add Product to Cart\n";
@@ -452,7 +440,7 @@ int main() {
             }
 
             switch (choice) {
-                case 1: { // Add Product to Cart
+                case 1: {
                     cout << "\nAvailable Products:\n";
                     for (size_t i = 0; i < products.size(); ++i) {
                         cout << i + 1 << ". " << products[i]->getName() 
@@ -485,7 +473,7 @@ int main() {
                     cout << "Added " << quantity << " x " << products[product_choice - 1]->getName() << " to cart.\n";
                     break;
                 }
-                case 2: { // Edit Cart
+                case 2: {
                     if (cart->getItems().empty()) {
                         cout << "Cart is empty.\n";
                         break;
@@ -508,7 +496,6 @@ int main() {
                     }
                     cin.ignore();
 
-                    // Map item_index to Product pointer
                     const Product* selected_product = nullptr;
                     int current_index = 1;
                     for (const auto& [prod, item] : cart->getItems()) {
@@ -536,12 +523,12 @@ int main() {
                         } else {
                             cout << "Updated quantity to " << new_quantity << ".\n";
                         }
-                    } catch (const std::exception& e) {
+                    } catch (const exception& e) {
                         cout << "Error: " << e.what() << "\n";
                     }
                     break;
                 }
-                case 3: { // Edit Product Price
+                case 3: {
                     cout << "\nAvailable Products:\n";
                     for (size_t i = 0; i < products.size(); ++i) {
                         cout << i + 1 << ". " << products[i]->getName() 
@@ -572,14 +559,14 @@ int main() {
 
                     try {
                         products[product_choice - 1]->setPrice(new_price);
-                        cart->recalculateTotals(); // Update cart totals
+                        cart->recalculateTotals();
                         cout << "Updated price of " << products[product_choice - 1]->getName() << " to " << fixed << setprecision(2) << new_price << " Rs.\n";
-                    } catch (const std::exception& e) {
+                    } catch (const exception& e) {
                         cout << "Error: " << e.what() << "\n";
                     }
                     break;
                 }
-                case 4: { // Set Loyalty Status
+                case 4: {
                     cout << "\nAre you a loyalty member? (y/n): ";
                     char loyalty;
                     cin >> loyalty;
@@ -594,7 +581,7 @@ int main() {
                     cout << "Loyalty status set to: " << (cart->isLoyaltyMember() ? "Yes" : "No") << "\n";
                     break;
                 }
-                case 5: { // Set Payment Bank
+                case 5: {
                     cout << "\nEnter payment bank (UPI,DEBIT CARD,CREDIT CARD): ";
                     string bank;
                     getline(cin, bank);
@@ -602,7 +589,7 @@ int main() {
                     cout << "Payment bank set to: " << bank << "\n";
                     break;
                 }
-                case 6: { // View Cart and Apply Discounts
+                case 6: {
                     cout << "\nCart Items:\n";
                     if (cart->getItems().empty()) {
                         cout << " - Cart is empty\n";
@@ -632,7 +619,7 @@ int main() {
                     cout << "Invalid choice. Please enter a number between 1 and 7.\n";
             }
         }
-    } catch (const std::exception& e) {
+    } catch (const exception& e) {
         cerr << "Error: " << e.what() << endl;
         return 1;
     }
